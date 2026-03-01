@@ -1,0 +1,5 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#fff3e0" />
+  <polygon points="400,100 200,500 600,500" fill="#ff9800" />
+  <text x="400" y="400" font-family="Arial" font-size="40" fill="white" text-anchor="middle">Root Image</text>
+</svg>
