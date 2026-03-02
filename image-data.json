@@ -1,32 +1,81 @@
 {
-  "/storage/VASTA/VASTA STONE - 1600x3200mm/THP-1600x3200/THP6L-CH D.png": {
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/1_NM_Tien_Son/Porcelain/15x90/GT 15902/GT 15902 F9.jpg": {
     "tags": [
-      "VASTA",
-      "1600x3200",
-      "Polished"
-    ],
-    "keywords": []
-  },
-  "/storage/1. VIGLACERA 72/MAP_ PLATINUM/PL - TIÊN SƠN/PT20/PT20-G6605.jpg": {
-    "tags": [
-      "600x600",
-      "20mm",
-      "Matt"
+      "150x900",
+      "Matt",
+      "Tiên Sơn"
     ],
     "keywords": [
-      "PT20G6605",
-      "PT20"
+      "Giả gỗ",
+      "GT15902"
     ]
   },
-  "/storage/4. DỰ ÁN 72/Nhà máy/Tiên Sơn/30x60/P23-GM3642/P23-GM3642 .jpg": {
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/1_NM_Tien_Son/Granite/60x60/TS5-602.jpg": {
     "tags": [
-      "300x600",
+      "600x600",
       "Tiên Sơn",
-      "Matt"
+      "Polished",
+      "Granite"
     ],
     "keywords": [
-      "P23GM3642",
-      "P23"
+      "TS5602"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/1_NM_Tien_Son/Granite/60x60/TS5-601.jpg": {
+    "tags": [
+      "600x600",
+      "Polished",
+      "Granite",
+      "Tiên Sơn"
+    ],
+    "keywords": [
+      "TS5601"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/1_NM_Tien_Son/Granite/60x60/TS3-617.jpg": {
+    "tags": [
+      "600x600",
+      "Tiên Sơn",
+      "Granite",
+      "Polished"
+    ],
+    "keywords": [
+      "TS3617"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/1_NM_Tien_Son/Granite/80x80/TS5-802.jpg": {
+    "tags": [
+      "800x800",
+      "Tiên Sơn",
+      "Granite",
+      "Polished"
+    ],
+    "keywords": [
+      "TS5802"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/1_NM_Tien_Son/Porcelain/60x60/TB 602/E.png": {
+    "tags": [
+      "600x600",
+      "Polished",
+      "Granite",
+      "Tiên Sơn"
+    ],
+    "keywords": [
+      "TB602",
+      "TB 602"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/2_NM_Thai_Binh/Porcelain/20x120/Matt/GT 21221/Ảnh chụp Màn hình 2020-04-10 lúc 15.56.24.png": {
+    "tags": [
+      "200x1200",
+      "Matt",
+      "Thái Bình",
+      "Granite"
+    ],
+    "keywords": [
+      "GT21211",
+      "GT 21211"
     ]
   }
 }
