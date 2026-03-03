@@ -77,5 +77,83 @@
       "GT21211",
       "GT 21211"
     ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/4_NM_Hai_Duong/50x50 Bán sứ/BS522.jpg": {
+    "tags": [
+      "Semi-Porcelain",
+      "500x500",
+      "Hải Dương",
+      "Matt"
+    ],
+    "keywords": [
+      "BS522"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/4_NM_Hai_Duong/50x50 Bán sứ/BS 506.jpg": {
+    "tags": [
+      "500x500",
+      "Hải Dương",
+      "Semi-Porcelain",
+      "Matt",
+      "Sân vườn"
+    ],
+    "keywords": [
+      "BS506"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/4_NM_Hai_Duong/40x40 Ceramic/M420.jpg": {
+    "tags": [
+      "400x400",
+      "Ceramic",
+      "Hải Dương",
+      "Matt",
+      "Vàng",
+      "Kem"
+    ],
+    "keywords": [
+      "M420"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/4_NM_Hai_Duong/40x40 Ceramic/VHP4403.jpg": {
+    "tags": [
+      "400x400",
+      "Ceramic",
+      "Hải Dương",
+      "Matt",
+      "Trắng"
+    ],
+    "keywords": [
+      "VHP4403",
+      "VHP 4403",
+      "VHP-4403"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/4_NM_Hai_Duong/40x40 Ceramic/M414.jpg": {
+    "tags": [
+      "400x400",
+      "Hải Dương",
+      "Ceramic",
+      "Matt",
+      "Ghi",
+      "Trắng"
+    ],
+    "keywords": [
+      "M414",
+      "M 414",
+      "M-414"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/7_NM_EU/HIEP THUY/VIG-GP883023-A.jpg": {
+    "tags": [
+      "800x800",
+      "Granite",
+      "Bạch Mã",
+      "Polished",
+      "Vàng",
+      "Kem"
+    ],
+    "keywords": [
+      "VIGGP883023"
+    ]
   }
 }
