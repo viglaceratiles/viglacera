@@ -1,7 +1,6 @@
 import { ImageData } from '@/types';
-import { Search, Download, ZoomIn, Folder, Image as ImageIcon, X, Home, ChevronRight, Tag, Plus } from 'lucide-react';
+import { Search, Download, ZoomIn, Folder, Image as ImageIcon, X, Home, ChevronRight, Tag, Plus, Menu } from 'lucide-react';
 import { useState, useEffect, useMemo, MouseEvent, KeyboardEvent, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 
 interface DirNode {
   name: string;
@@ -108,6 +107,7 @@ export default function App() {
   const [tagInput, setTagInput] = useState('');
   const [keywordInput, setKeywordInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Pagination / Infinite Scroll state
   const [visibleCount, setVisibleCount] = useState(50);
@@ -132,6 +132,10 @@ export default function App() {
   useEffect(() => {
     fetchImages();
   }, []);
+
+  const getImageUrl = (path: string) => {
+    return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+  };
 
   const fetchImages = async () => {
     try {
@@ -297,7 +301,7 @@ export default function App() {
         document.body.removeChild(a);
       } else {
         // In production (GitHub Pages), download directly from the static file
-        const url = `${import.meta.env.BASE_URL}${img.path.replace(/^\//, '')}`;
+        const url = getImageUrl(img.path);
         const a = document.createElement('a');
         a.href = url;
         a.download = img.filename;
@@ -390,23 +394,31 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col bg-neutral-50 text-neutral-900 font-sans overflow-hidden">
       {/* Header */}
-      <header className="flex-none z-10 bg-white/80 backdrop-blur-md border-b border-neutral-200 px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-              <ImageIcon className="w-6 h-6 text-white" />
+      <header className="flex-none z-10 bg-white/80 backdrop-blur-md border-b border-neutral-200 px-4 sm:px-6 py-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-2">
+              <button 
+                className="md:hidden p-2 -ml-2 text-neutral-600 hover:bg-neutral-100 rounded-lg"
+                onClick={() => setIsMobileSidebarOpen(true)}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <div className="bg-indigo-600 p-2 rounded-lg hidden sm:block">
+                <ImageIcon className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-xl font-bold tracking-tight text-neutral-900">Image Manager</h1>
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-neutral-900">Image Manager</h1>
           </div>
 
-          <div className="relative w-full md:w-96">
+          <div className="relative w-full sm:w-96">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-neutral-400" />
             </div>
             <input
               type="text"
               className="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-xl leading-5 bg-neutral-50 placeholder-neutral-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all duration-200"
-              placeholder="Search by name, folder, tags, keywords..."
+              placeholder="Search by name, folder, tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -414,12 +426,33 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Sidebar Overlay */}
+        {isMobileSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <aside className="w-64 flex-none bg-white border-r border-neutral-200 overflow-y-auto py-6 px-4 hidden md:block">
+        <aside className={`
+          absolute md:static inset-y-0 left-0 z-50 w-72 md:w-64 flex-none bg-white border-r border-neutral-200 overflow-y-auto py-6 px-4
+          transform transition-transform duration-300 ease-in-out
+          ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}>
+          <div className="flex items-center justify-between mb-6 md:hidden">
+            <h2 className="text-lg font-bold text-neutral-900">Menu</h2>
+            <button 
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="p-2 text-neutral-500 hover:bg-neutral-100 rounded-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
           <nav className="space-y-1">
             <button
-              onClick={() => setSelectedDirectory(null)}
+              onClick={() => { setSelectedDirectory(null); setIsMobileSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 selectedDirectory === null
                   ? 'bg-indigo-50 text-indigo-700'
@@ -440,7 +473,7 @@ export default function App() {
             <DirectoryTree 
               nodes={directoryTree} 
               selectedDirectory={selectedDirectory} 
-              onSelect={setSelectedDirectory} 
+              onSelect={(dir) => { setSelectedDirectory(dir); setIsMobileSidebarOpen(false); }} 
             />
 
             <div className="pt-6 pb-2 flex items-center justify-between px-3">
@@ -523,12 +556,12 @@ export default function App() {
                       {dirImages.map((img) => (
                         <div
                           key={img.path}
-                          className="group relative bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer flex flex-col animate-in fade-in zoom-in-95 duration-300"
+                          className="group relative bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer flex flex-col"
                           onClick={() => openLightbox(img)}
                         >
                           <div className="aspect-[4/3] overflow-hidden bg-neutral-100 relative">
                             <img
-                              src={`/viglacera/${img.path}`}
+                              src={getImageUrl(img.path)}
                               alt={img.filename}
                               loading="lazy"
                               className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
@@ -605,43 +638,36 @@ export default function App() {
       </div>
 
       {/* Lightbox Modal */}
-      <AnimatePresence>
-        {selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
-            onClick={() => setSelectedImage(null)}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-pointer"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="relative max-w-7xl max-h-[90vh] w-full flex flex-col md:flex-row gap-6 items-start cursor-default bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl"
+            onClick={(e) => {
+              if (e.target !== e.currentTarget) {
+                e.stopPropagation();
+              } else {
+                setSelectedImage(null);
+              }
+            }}
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-7xl max-h-[90vh] w-full flex flex-col md:flex-row gap-6 items-start cursor-default bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl"
-              onClick={(e) => {
-                if (e.target !== e.currentTarget) {
-                  e.stopPropagation();
-                } else {
-                  setSelectedImage(null);
-                }
-              }}
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-10 bg-black/20 rounded-full"
             >
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-10 bg-black/20 rounded-full"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <X className="w-6 h-6" />
+            </button>
 
-              {/* Image Container */}
-              <div className="flex-1 w-full flex items-center justify-center p-6 bg-black/40 min-h-[50vh] md:min-h-[80vh]">
-                <img
-                  src={`/viglacera/${selectedImage.path}`}
-                  alt={selectedImage.filename}
-                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl"
-                />
-              </div>
+            {/* Image Container */}
+            <div className="flex-1 w-full flex items-center justify-center p-6 bg-black/40 min-h-[50vh] md:min-h-[80vh]">
+              <img
+                src={getImageUrl(selectedImage.path)}
+                alt={selectedImage.filename}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl"
+              />
+            </div>
 
               {/* Metadata Sidebar */}
               <div className="w-full md:w-80 bg-neutral-900 p-6 flex flex-col h-full overflow-y-auto border-t md:border-t-0 md:border-l border-neutral-800">
@@ -715,10 +741,9 @@ export default function App() {
                   </button>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
