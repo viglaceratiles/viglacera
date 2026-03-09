@@ -1,7 +1,20 @@
-import { ImageData } from '@/types';
-import { Search, Download, ZoomIn, Folder, Image as ImageIcon, X, Home, ChevronRight, Tag, Plus, Menu, Camera } from 'lucide-react';
-import { useState, useEffect, useMemo, MouseEvent, KeyboardEvent, useRef, useCallback } from 'react';
-import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
+import {ImageData} from '@/types';
+import {
+    Search,
+    Download,
+    ZoomIn,
+    Folder,
+    Image as ImageIcon,
+    X,
+    Home,
+    ChevronRight,
+    Tag,
+    Plus,
+    Menu,
+    Camera
+} from 'lucide-react';
+import React, {useState, useEffect, useMemo, MouseEvent, KeyboardEvent, useRef, useCallback} from 'react';
+import ReactCrop, {type Crop, type PixelCrop} from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
 function base64ToUint8Array(base64: string) {
@@ -55,17 +68,17 @@ const DirectoryTree = ({
     );
 };
 
-const DirectoryTreeNode = ({
-                               node,
-                               level,
-                               selectedDirectory,
-                               onSelect
-                           }: {
+const DirectoryTreeNode: React.FC<{
     node: DirNode,
     level: number,
     selectedDirectory: string | null,
     onSelect: (path: string) => void
-}) => {
+}> = ({
+          node,
+          level,
+          selectedDirectory,
+          onSelect
+      }) => {
     const isSelected = selectedDirectory === node.path;
     const hasChildren = Object.keys(node.children).length > 0;
     const [expanded, setExpanded] = useState(true);
@@ -78,29 +91,33 @@ const DirectoryTreeNode = ({
                         ? 'bg-indigo-50 text-indigo-700'
                         : 'text-neutral-700 hover:bg-neutral-100'
                 }`}
-                style={{ paddingLeft: `${level * 16 + 12}px` }}
+                style={{paddingLeft: `${level * 16 + 12}px`}}
                 onClick={() => onSelect(node.path)}
                 title={node.name}
             >
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     {hasChildren ? (
                         <button
-                            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setExpanded(!expanded);
+                            }}
                             className="p-0.5 hover:bg-neutral-200 rounded text-neutral-500 flex-none"
                         >
-                            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+                            <ChevronRight
+                                className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`}/>
                         </button>
                     ) : (
-                        <span className="w-[18px] flex-none" />
+                        <span className="w-[18px] flex-none"/>
                     )}
-                    <Folder className={`w-4 h-4 flex-none ${isSelected ? 'text-indigo-500' : 'text-neutral-400'}`} />
+                    <Folder className={`w-4 h-4 flex-none ${isSelected ? 'text-indigo-500' : 'text-neutral-400'}`}/>
                     <span className="truncate">{node.name}</span>
                 </div>
             </div>
             {expanded && hasChildren && (
                 <div className="mt-0.5">
                     <DirectoryTree
-                        nodes={Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name))}
+                        nodes={(Object.values(node.children) as DirNode[]).sort((a, b) => a.name.localeCompare(b.name))}
                         level={level + 1}
                         selectedDirectory={selectedDirectory}
                         onSelect={onSelect}
@@ -186,7 +203,7 @@ export default function App() {
         // Add Root directory explicitly if there are files in root
         const hasRootFiles = images.some(img => img.directory === '.');
         if (hasRootFiles) {
-            rootNodes['Root'] = { name: 'Root', path: 'Root', children: {} };
+            rootNodes['Root'] = {name: 'Root', path: 'Root', children: {}};
         }
 
         images.forEach(img => {
@@ -266,10 +283,10 @@ export default function App() {
         // Filter by image feature similarity
         if (searchFeature) {
             result = result.map(img => {
-                if (!img.feature) return { img, score: Infinity };
+                if (!img.feature) return {img, score: Infinity};
                 const imgFeature = base64ToUint8Array(img.feature);
                 const score = calculateMSE(searchFeature, imgFeature);
-                return { img, score };
+                return {img, score};
             })
                 // 5000 is a reasonable MSE threshold for "similar colors/patterns" in 8x8 RGB
                 .filter(item => item.score < 5000)
@@ -281,7 +298,7 @@ export default function App() {
     }, [images, searchQuery, selectedDirectory, selectedTags, tagFilterMode, searchFeature]);
 
     // Group images by directory for the "Folder View" feel, or just list them.
-    const groupedImages = useMemo(() => {
+    const groupedImages = useMemo<Record<string, ImageData[]>>(() => {
         const groups: Record<string, ImageData[]> = {};
 
         // If we are on the home page (no directory selected) and no search query/tags,
@@ -301,10 +318,10 @@ export default function App() {
     }, [filteredImages, selectedDirectory, searchQuery, selectedTags]);
 
     const visibleGroupedImages = useMemo(() => {
-        const result: Array<{dir: string, images: ImageData[], total: number}> = [];
+        const result: Array<{ dir: string, images: ImageData[], total: number }> = [];
         let currentCount = 0;
 
-        for (const [dir, dirImages] of Object.entries(groupedImages)) {
+        for (const [dir, dirImages] of Object.entries(groupedImages) as [string, ImageData[]][]) {
             if (currentCount >= visibleCount) break;
 
             const remaining = visibleCount - currentCount;
@@ -323,35 +340,64 @@ export default function App() {
     }, [groupedImages, visibleCount]);
 
     const totalImagesInGroups = useMemo(() => {
-        return Object.values(groupedImages).reduce((acc, arr) => acc + arr.length, 0);
+        return (Object.values(groupedImages) as ImageData[][]).reduce((acc, arr) => acc + arr.length, 0);
     }, [groupedImages]);
 
     const handleDownload = async (e: MouseEvent, img: ImageData) => {
         e.stopPropagation();
         try {
+            let url = '';
             if (import.meta.env.DEV) {
-                const response = await fetch(`/api/download?path=${encodeURIComponent(img.path)}`);
-                if (!response.ok) throw new Error('Download failed');
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = img.filename;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                url = `/api/download?path=${encodeURIComponent(img.path)}`;
             } else {
-                // In production (GitHub Pages), download directly from the static file
-                const url = getImageUrl(img.path);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = img.filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                url = getImageUrl(img.path);
             }
+
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const objectUrl = window.URL.createObjectURL(blob);
+
+            const image = new Image();
+            await new Promise((resolve, reject) => {
+                image.onload = resolve;
+                image.onerror = reject;
+                image.src = objectUrl;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Could not get canvas context');
+
+            // Fill with white background for transparent images
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0);
+
+            const jpegBlob = await new Promise<Blob | null>(resolve => {
+                canvas.toBlob(resolve, 'image/jpeg', 0.95);
+            });
+
+            if (!jpegBlob) throw new Error('Could not create JPEG blob');
+
+            const downloadUrl = window.URL.createObjectURL(jpegBlob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+
+            // Change extension to .jpg
+            const nameWithoutExt = img.filename.substring(0, img.filename.lastIndexOf('.')) || img.filename;
+            a.download = `${nameWithoutExt}.jpg`;
+
+            document.body.appendChild(a);
+            a.click();
+
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            window.URL.revokeObjectURL(objectUrl);
         } catch (error) {
             console.error('Download error:', error);
         }
@@ -377,7 +423,7 @@ export default function App() {
         try {
             const response = await fetch('/api/images/metadata', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     path: selectedImage.path,
                     tags: editTags,
@@ -388,7 +434,7 @@ export default function App() {
             if (!response.ok) throw new Error('Failed to save metadata');
 
             // Update local state
-            const updatedImage = { ...selectedImage, tags: editTags, keywords: editKeywords };
+            const updatedImage = {...selectedImage, tags: editTags, keywords: editKeywords};
             setImages(images.map(img => img.path === selectedImage.path ? updatedImage : img));
             setSelectedImage(updatedImage);
         } catch (error) {
@@ -485,7 +531,8 @@ export default function App() {
     return (
         <div className="h-screen flex flex-col bg-neutral-50 text-neutral-900 font-sans overflow-hidden">
             {/* Header */}
-            <header className="flex-none z-10 bg-white/80 backdrop-blur-md border-b border-neutral-200 px-4 sm:px-6 py-4">
+            <header
+                className="flex-none z-10 bg-white/80 backdrop-blur-md border-b border-neutral-200 px-4 sm:px-6 py-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
                         <div className="flex items-center gap-2">
@@ -493,10 +540,10 @@ export default function App() {
                                 className="md:hidden p-2 -ml-2 text-neutral-600 hover:bg-neutral-100 rounded-lg"
                                 onClick={() => setIsMobileSidebarOpen(true)}
                             >
-                                <Menu className="w-6 h-6" />
+                                <Menu className="w-6 h-6"/>
                             </button>
                             <div className="bg-indigo-600 p-2 rounded-lg hidden sm:block">
-                                <ImageIcon className="w-5 h-5 text-white" />
+                                <ImageIcon className="w-5 h-5 text-white"/>
                             </div>
                             <h1 className="text-xl font-bold tracking-tight text-neutral-900">Image Manager</h1>
                         </div>
@@ -505,7 +552,7 @@ export default function App() {
                     <div className="relative w-full sm:w-96 flex items-center gap-2">
                         <div className="relative flex-1">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-neutral-400" />
+                                <Search className="h-5 w-5 text-neutral-400"/>
                             </div>
                             <input
                                 type="text"
@@ -524,7 +571,7 @@ export default function App() {
                             }`}
                             title="Search by Image"
                         >
-                            <Camera className="w-5 h-5" />
+                            <Camera className="w-5 h-5"/>
                         </button>
                         {searchFeature && (
                             <button
@@ -532,7 +579,7 @@ export default function App() {
                                 className="p-2 rounded-xl border bg-white border-neutral-300 text-red-500 hover:bg-red-50 transition-colors"
                                 title="Clear Image Search"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-5 h-5"/>
                             </button>
                         )}
                     </div>
@@ -560,19 +607,23 @@ export default function App() {
                             onClick={() => setIsMobileSidebarOpen(false)}
                             className="p-2 text-neutral-500 hover:bg-neutral-100 rounded-lg"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-5 h-5"/>
                         </button>
                     </div>
                     <nav className="space-y-1">
                         <button
-                            onClick={() => { setSelectedDirectory(null); setIsMobileSidebarOpen(false); }}
+                            onClick={() => {
+                                setSelectedDirectory(null);
+                                setIsMobileSidebarOpen(false);
+                            }}
                             className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                 selectedDirectory === null
                                     ? 'bg-indigo-50 text-indigo-700'
                                     : 'text-neutral-700 hover:bg-neutral-100'
                             }`}
                         >
-                            <Home className={`w-5 h-5 ${selectedDirectory === null ? 'text-indigo-500' : 'text-neutral-400'}`} />
+                            <Home
+                                className={`w-5 h-5 ${selectedDirectory === null ? 'text-indigo-500' : 'text-neutral-400'}`}/>
                             Home
                         </button>
 
@@ -586,7 +637,10 @@ export default function App() {
                         <DirectoryTree
                             nodes={directoryTree}
                             selectedDirectory={selectedDirectory}
-                            onSelect={(dir) => { setSelectedDirectory(dir); setIsMobileSidebarOpen(false); }}
+                            onSelect={(dir) => {
+                                setSelectedDirectory(dir);
+                                setIsMobileSidebarOpen(false);
+                            }}
                         />
 
                         <div className="pt-6 pb-2 flex items-center justify-between px-3">
@@ -636,7 +690,8 @@ export default function App() {
                         {(selectedDirectory || selectedTags.length > 0) && !loading && (
                             <div className="mb-8 flex items-center gap-3">
                                 <div className="p-3 bg-indigo-100 rounded-xl">
-                                    {selectedDirectory ? <Folder className="w-8 h-8 text-indigo-600" /> : <Tag className="w-8 h-8 text-indigo-600" />}
+                                    {selectedDirectory ? <Folder className="w-8 h-8 text-indigo-600"/> :
+                                        <Tag className="w-8 h-8 text-indigo-600"/>}
                                 </div>
                                 <div>
                                     <h2 className="text-2xl font-bold text-neutral-900 capitalize">
@@ -653,11 +708,11 @@ export default function App() {
                             </div>
                         ) : (
                             <div className="space-y-12">
-                                {visibleGroupedImages.map(({ dir, images: dirImages, total }) => (
+                                {visibleGroupedImages.map(({dir, images: dirImages, total}) => (
                                     <section key={dir} className="space-y-4">
                                         {(!selectedDirectory || searchQuery || selectedTags.length > 0) && (
                                             <div className="flex items-center gap-2 border-b border-neutral-200 pb-2">
-                                                <Folder className="w-5 h-5 text-indigo-500" />
+                                                <Folder className="w-5 h-5 text-indigo-500"/>
                                                 <h3 className="text-lg font-semibold text-neutral-800 capitalize">
                                                     {dir}
                                                 </h3>
@@ -665,43 +720,48 @@ export default function App() {
                                             </div>
                                         )}
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                        <div
+                                            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                                             {dirImages.map((img) => (
                                                 <div
                                                     key={img.path}
                                                     className="group relative bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer flex flex-col"
                                                     onClick={() => openLightbox(img)}
                                                 >
-                                                    <div className="aspect-[4/3] overflow-hidden bg-neutral-100 relative">
+                                                    <div
+                                                        className="aspect-[4/3] overflow-hidden bg-neutral-100 relative">
                                                         <img
                                                             src={getImageUrl(img.path)}
                                                             alt={img.filename}
                                                             loading="lazy"
                                                             className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                                                         />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                                                        <div
+                                                            className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"/>
 
                                                         {/* Overlay Actions */}
-                                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-2">
+                                                        <div
+                                                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-2">
                                                             <button
                                                                 className="p-2 bg-white/90 rounded-full shadow-lg hover:bg-white text-neutral-700 hover:text-indigo-600 transition-colors"
                                                                 title="Zoom"
                                                             >
-                                                                <ZoomIn className="w-5 h-5" />
+                                                                <ZoomIn className="w-5 h-5"/>
                                                             </button>
                                                             <button
                                                                 onClick={(e) => handleDownload(e, img)}
                                                                 className="p-2 bg-white/90 rounded-full shadow-lg hover:bg-white text-neutral-700 hover:text-indigo-600 transition-colors"
                                                                 title="Download"
                                                             >
-                                                                <Download className="w-5 h-5" />
+                                                                <Download className="w-5 h-5"/>
                                                             </button>
                                                         </div>
                                                     </div>
 
                                                     <div className="p-4 flex-1 flex flex-col justify-between">
                                                         <div>
-                                                            <h3 className="text-sm font-medium text-neutral-900 truncate" title={img.title}>
+                                                            <h3 className="text-sm font-medium text-neutral-900 truncate"
+                                                                title={img.title}>
                                                                 {img.title}
                                                             </h3>
                                                             <p className="text-xs text-neutral-500 mt-1 font-mono truncate">
@@ -711,12 +771,14 @@ export default function App() {
                                                         {img.tags && img.tags.length > 0 && (
                                                             <div className="mt-3 flex flex-wrap gap-1">
                                                                 {img.tags.slice(0, 3).map(tag => (
-                                                                    <span key={tag} className="px-1.5 py-0.5 bg-neutral-100 text-neutral-600 text-[10px] rounded border border-neutral-200 truncate max-w-full">
+                                                                    <span key={tag}
+                                                                          className="px-1.5 py-0.5 bg-neutral-100 text-neutral-600 text-[10px] rounded border border-neutral-200 truncate max-w-full">
                                     {tag}
                                   </span>
                                                                 ))}
                                                                 {img.tags.length > 3 && (
-                                                                    <span className="px-1.5 py-0.5 bg-neutral-50 text-neutral-500 text-[10px] rounded border border-neutral-200">
+                                                                    <span
+                                                                        className="px-1.5 py-0.5 bg-neutral-50 text-neutral-500 text-[10px] rounded border border-neutral-200">
                                     +{img.tags.length - 3}
                                   </span>
                                                                 )}
@@ -731,17 +793,20 @@ export default function App() {
 
                                 {filteredImages.length === 0 && (
                                     <div className="text-center py-20">
-                                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 mb-4">
-                                            <Search className="w-8 h-8 text-neutral-400" />
+                                        <div
+                                            className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 mb-4">
+                                            <Search className="w-8 h-8 text-neutral-400"/>
                                         </div>
                                         <h3 className="text-lg font-medium text-neutral-900">No images found</h3>
-                                        <p className="text-neutral-500 mt-2">Try adjusting your search terms or selecting a different folder.</p>
+                                        <p className="text-neutral-500 mt-2">Try adjusting your search terms or
+                                            selecting a different folder.</p>
                                     </div>
                                 )}
 
                                 {totalImagesInGroups > visibleCount && (
                                     <div ref={lastElementRef} className="h-20 flex items-center justify-center mt-8">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                        <div
+                                            className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                                     </div>
                                 )}
                             </div>
@@ -753,11 +818,13 @@ export default function App() {
             {/* Image Search Modal */}
             {isImageSearchOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div
+                        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="flex items-center justify-between p-4 border-b border-neutral-200">
                             <h2 className="text-lg font-bold text-neutral-900">Image Search</h2>
-                            <button onClick={() => setIsImageSearchOpen(false)} className="p-2 text-neutral-500 hover:bg-neutral-100 rounded-lg">
-                                <X className="w-5 h-5" />
+                            <button onClick={() => setIsImageSearchOpen(false)}
+                                    className="p-2 text-neutral-500 hover:bg-neutral-100 rounded-lg">
+                                <X className="w-5 h-5"/>
                             </button>
                         </div>
                         <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
@@ -768,7 +835,8 @@ export default function App() {
                                 className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                             />
                             {searchImageSrc && (
-                                <div className="border border-neutral-200 rounded-lg bg-neutral-50 flex items-center justify-center p-4 min-h-[300px] overflow-auto">
+                                <div
+                                    className="border border-neutral-200 rounded-lg bg-neutral-50 flex items-center justify-center p-4 min-h-[300px] overflow-auto">
                                     <ReactCrop
                                         crop={crop}
                                         onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -781,9 +849,9 @@ export default function App() {
                                             src={searchImageSrc}
                                             className="max-w-full max-h-[50vh] w-auto h-auto block"
                                             onLoad={(e) => {
-                                                const { width, height } = e.currentTarget;
-                                                setCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
-                                                setCompletedCrop({ unit: 'px', x: 0, y: 0, width, height });
+                                                const {width, height} = e.currentTarget;
+                                                setCrop({unit: '%', x: 0, y: 0, width: 100, height: 100});
+                                                setCompletedCrop({unit: 'px', x: 0, y: 0, width, height});
                                             }}
                                         />
                                     </ReactCrop>
@@ -833,11 +901,12 @@ export default function App() {
                             onClick={() => setSelectedImage(null)}
                             className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-10 bg-black/20 rounded-full"
                         >
-                            <X className="w-6 h-6" />
+                            <X className="w-6 h-6"/>
                         </button>
 
                         {/* Image Container */}
-                        <div className="flex-1 w-full flex items-center justify-center p-6 bg-black/40 min-h-[50vh] md:min-h-[80vh]">
+                        <div
+                            className="flex-1 w-full flex items-center justify-center p-6 bg-black/40 min-h-[50vh] md:min-h-[80vh]">
                             <img
                                 src={getImageUrl(selectedImage.path)}
                                 alt={selectedImage.filename}
@@ -846,10 +915,11 @@ export default function App() {
                         </div>
 
                         {/* Metadata Sidebar */}
-                        <div className="w-full md:w-80 bg-neutral-900 p-6 flex flex-col h-full overflow-y-auto border-t md:border-t-0 md:border-l border-neutral-800">
+                        <div
+                            className="w-full md:w-80 bg-neutral-900 p-6 flex flex-col h-full overflow-y-auto border-t md:border-t-0 md:border-l border-neutral-800">
                             <h3 className="text-white text-xl font-medium mb-1">{selectedImage.filename}</h3>
                             <p className="text-neutral-400 text-sm mb-6 flex items-center gap-2">
-                                <Folder className="w-4 h-4" /> {selectedImage.directory}
+                                <Folder className="w-4 h-4"/> {selectedImage.directory}
                             </p>
 
                             <div className="space-y-6 flex-1">
@@ -858,9 +928,11 @@ export default function App() {
                                     <label className="block text-sm font-medium text-neutral-300 mb-2">Tags</label>
                                     <div className="flex flex-wrap gap-2 mb-3">
                                         {editTags.map(tag => (
-                                            <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-sm bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                            <span key={tag}
+                                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-sm bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                           {tag}
-                                                <button onClick={() => removeTag(tag)} className="hover:text-white"><X className="w-3 h-3" /></button>
+                                                <button onClick={() => removeTag(tag)} className="hover:text-white"><X
+                                                    className="w-3 h-3"/></button>
                         </span>
                                         ))}
                                     </div>
@@ -881,9 +953,11 @@ export default function App() {
                                     <label className="block text-sm font-medium text-neutral-300 mb-2">Keywords</label>
                                     <div className="flex flex-wrap gap-2 mb-3">
                                         {editKeywords.map(keyword => (
-                                            <span key={keyword} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                            <span key={keyword}
+                                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                           {keyword}
-                                                <button onClick={() => removeKeyword(keyword)} className="hover:text-white"><X className="w-3 h-3" /></button>
+                                                <button onClick={() => removeKeyword(keyword)}
+                                                        className="hover:text-white"><X className="w-3 h-3"/></button>
                         </span>
                                         ))}
                                     </div>
@@ -916,7 +990,7 @@ export default function App() {
                                         }}
                                         className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                     >
-                                        <Camera className="w-4 h-4" />
+                                        <Camera className="w-4 h-4"/>
                                         Find Similar
                                     </button>
                                 )}
@@ -924,8 +998,8 @@ export default function App() {
                                     onClick={(e) => handleDownload(e, selectedImage)}
                                     className="w-full py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                                 >
-                                    <Download className="w-4 h-4" />
-                                    Download Original
+                                    <Download className="w-4 h-4"/>
+                                    Download JPG
                                 </button>
                             </div>
                         </div>
