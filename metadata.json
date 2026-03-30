@@ -1,0 +1,5 @@
+{
+  "name": "Image Manager",
+  "description": "A web application to automatically scan and manage images in project directories with zoom, download, and search capabilities.",
+  "requestFramePermissions": []
+}
