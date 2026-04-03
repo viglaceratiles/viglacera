@@ -1,11 +1,278 @@
 {
-  "/storage/7. VASTA/VASTA STONE - 1600x3200mm/TRAVERTINO-1600x3200/TRAVERTINO.png": {
-    "tags": [
-      "Vasta",
-      "1600x3200"
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/5_NM_Thang_Long/40x80 Ceramic bóng/TL4811.webp": {
+    "sizeTags": [
+      "400x800"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Ceramic"
+    ],
+    "otherTags": [
+      "Thăng Long"
     ],
     "keywords": [
-      "Travertino"
+      "TL4811",
+      "TL-4811",
+      "TL 4811"
+    ]
+  },
+  "/storage/8. Viglacera thực tế/80 x 160/TT VI9 9GP81601.webp": {
+    "sizeTags": [
+      "800x1600"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [],
+    "keywords": []
+  },
+  "/storage/8. Viglacera thực tế/80 x 80/TT VIG GM883002.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Matt"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [],
+    "keywords": []
+  },
+  "/storage/8. Viglacera thực tế/80 x 80/TT TB808.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "Thái Bình"
+    ],
+    "keywords": []
+  },
+  "/storage/8. Viglacera thực tế/80 x 80/TT ECO D806.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "Thái Bình",
+      "Thực tế"
+    ],
+    "keywords": []
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/1_NM_Tien_Son/Porcelain/80x80 Polished/TS25-VGP802/TS25-VGP802 f1.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "Tiên Sơn"
+    ],
+    "keywords": [
+      "TS25"
+    ]
+  },
+  "/storage/1_VIGLACERA/MAP_VIG_CHUNG/3_NM_Yen_Phong/80x80 Semi Porcelain/VHP 8811/VHP 8811b.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Matt"
+    ],
+    "materialTags": [
+      "Semi Porcelain"
+    ],
+    "otherTags": [
+      "Yên Phong"
+    ],
+    "keywords": [
+      "VHP8811",
+      "VHP 8811",
+      "VHP-8811"
+    ]
+  },
+  "/storage/8. Viglacera thực tế/80 x 80/TT VIG GM883001.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Matt"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [],
+    "keywords": []
+  },
+  "/storage/8. Viglacera thực tế/80 x 80/TT TS5 802.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "Tiên Sơn",
+      "Thực tế"
+    ],
+    "keywords": [
+      "TS5802",
+      "TS5-802",
+      "TS 802"
+    ]
+  },
+  "/storage/8. Viglacera thực tế/80 x 80/TT TS5 801.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "Tiên Sơn",
+      "Thực tế"
+    ],
+    "keywords": [
+      "TS5801",
+      "TS5-801",
+      "TS5 801"
+    ]
+  },
+  "/storage/7. VASTA/VASTA STONE - 1600x3200mm/TRAVERTINO-1600x3200/TRAVERTINO.webp": {
+    "sizeTags": [
+      "1600x3200"
+    ],
+    "surfaceTags": [
+      "Matt",
+      "Honed",
+      "Polished"
+    ],
+    "materialTags": [
+      "Sintered Stone"
+    ],
+    "otherTags": [
+      "Vasta"
+    ],
+    "keywords": [
+      "traventino"
+    ]
+  },
+  "/storage/7. VASTA/VASTA STONE - 1600x3200mm/THP-1600x3200/THP6L-CH D.webp": {
+    "sizeTags": [
+      "1600x3200"
+    ],
+    "surfaceTags": [
+      "Honed",
+      "Polished",
+      "Matt"
+    ],
+    "materialTags": [
+      "Sintered Stone"
+    ],
+    "otherTags": [
+      "Vasta"
+    ],
+    "keywords": []
+  },
+  "/storage/7. VASTA/VASTA STONE - 1600x3200mm/STATUARIO - 1600x3200 mm/STAUARIO C.webp": {
+    "sizeTags": [
+      "1600x3200"
+    ],
+    "surfaceTags": [
+      "Matt",
+      "Honed",
+      "Polished"
+    ],
+    "materialTags": [
+      "Sintered Stone"
+    ],
+    "otherTags": [
+      "Vasta"
+    ],
+    "keywords": []
+  },
+  "/storage/4. DỰ ÁN 72/Nhà máy/Thái Bình/60x60/PGP 621.webp": {
+    "sizeTags": [
+      "600x600"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "Thái Bình"
+    ],
+    "keywords": [
+      "PGP621",
+      "PGP-621",
+      "PGP 621"
+    ]
+  },
+  "/storage/8. Viglacera thực tế/80 x 160/TT VI3 GM81602.webp": {
+    "sizeTags": [
+      "800x1600"
+    ],
+    "surfaceTags": [
+      "Matt"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "EU"
+    ],
+    "keywords": [
+      "VI3 GM81602",
+      "VI3-GM81602",
+      "VI3GM81602"
+    ]
+  },
+  "/storage/8. Viglacera thực tế/80 x 80/TT TS3 817.webp": {
+    "sizeTags": [
+      "800x800"
+    ],
+    "surfaceTags": [
+      "Polished"
+    ],
+    "materialTags": [
+      "Granite"
+    ],
+    "otherTags": [
+      "Tiên Sơn",
+      "Thực tế"
+    ],
+    "keywords": [
+      "TS3 817",
+      "TS3-817",
+      "TS3817"
     ]
   }
 }
