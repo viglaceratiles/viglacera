@@ -1,5 +1,5 @@
 import { ImageData } from '@/types';
-import { Search, Download, ZoomIn, Folder, Image as ImageIcon, X, Home, ChevronRight, Tag, Plus, Menu, Camera, Copy } from 'lucide-react';
+import { Search, Download, ZoomIn, Folder, Image as ImageIcon, X, Home, ChevronRight, Tag, Plus, Menu, Camera, Copy, Check } from 'lucide-react';
 import React, { useState, useEffect, useMemo, MouseEvent, KeyboardEvent, useRef, useCallback } from 'react';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -68,7 +68,7 @@ const DirectoryTreeNode: React.FC<{
 }) => {
   const isSelected = selectedDirectory === node.path;
   const hasChildren = Object.keys(node.children).length > 0;
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="w-full">
@@ -151,8 +151,25 @@ export default function App() {
     other: string;
   }>({ size: '', surface: '', material: '', other: '' });
   const [keywordInput, setKeywordInput] = useState('');
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedImage) {
+        setSelectedImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage]);
 
   // Image Search state
   const [isImageSearchOpen, setIsImageSearchOpen] = useState(false);
@@ -161,6 +178,20 @@ export default function App() {
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const imgRef = useRef<HTMLImageElement>(null);
   const [searchFeature, setSearchFeature] = useState<Uint8Array | null>(null);
+
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (searchQuery || searchFeature) {
+      setSelectedDirectory(null);
+    }
+  }, [searchQuery, searchFeature]);
+
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [selectedDirectory, searchQuery, searchFeature, selectedTags]);
 
   // Pagination / Infinite Scroll state
   const [visibleCount, setVisibleCount] = useState(50);
@@ -206,12 +237,6 @@ export default function App() {
 
   const directoryTree = useMemo(() => {
     const rootNodes: Record<string, DirNode> = {};
-    
-    // Add Root directory explicitly if there are files in root
-    const hasRootFiles = images.some(img => img.directory === '.');
-    if (hasRootFiles) {
-      rootNodes['Root'] = { name: 'Root', path: 'Root', children: {} };
-    }
 
     images.forEach(img => {
       if (img.directory === '.') return;
@@ -235,11 +260,7 @@ export default function App() {
       });
     });
     
-    return Object.values(rootNodes).sort((a, b) => {
-      if (a.name === 'Root') return -1;
-      if (b.name === 'Root') return 1;
-      return a.name.localeCompare(b.name);
-    });
+    return Object.values(rootNodes).sort((a, b) => a.name.localeCompare(b.name));
   }, [images]);
 
   const allTags = useMemo(() => {
@@ -342,11 +363,11 @@ export default function App() {
   const groupedImages = useMemo<Record<string, ImageData[]>>(() => {
     const groups: Record<string, ImageData[]> = {};
     
-    // If we are on the home page (no directory selected) and no search query/tags,
-    // just show the first 10 images total, grouped by their directory
-    let imagesToGroup = filteredImages;
-    if (!selectedDirectory && !searchQuery && totalSelectedTagsCount === 0) {
-      imagesToGroup = filteredImages.slice(0, 10);
+    const imagesToGroup = filteredImages;
+
+    if (searchFeature) {
+      groups['Kết quả tìm kiếm bằng hình ảnh'] = imagesToGroup;
+      return groups;
     }
 
     imagesToGroup.forEach((img) => {
@@ -356,7 +377,7 @@ export default function App() {
       groups[dir].push(img);
     });
     return groups;
-  }, [filteredImages, selectedDirectory, searchQuery, selectedTags]);
+  }, [filteredImages, searchFeature]);
 
   const visibleGroupedImages = useMemo(() => {
     const result: Array<{dir: string, images: ImageData[], total: number}> = [];
@@ -461,7 +482,7 @@ export default function App() {
     if (!selectedImage) return;
     
     if (!import.meta.env.DEV) {
-      alert("Chức năng lưu chỉ hoạt động ở môi trường Local. Trên GitHub Pages, dữ liệu chỉ có thể xem.");
+      showToast("Chức năng chỉ hoạt động ở môi trường Local", "error");
       return;
     }
 
@@ -493,8 +514,10 @@ export default function App() {
       };
       setImages(images.map(img => img.path === selectedImage.path ? updatedImage : img));
       setSelectedImage(updatedImage);
+      showToast("Metadata saved successfully!");
     } catch (error) {
       console.error('Error saving metadata:', error);
+      showToast("Failed to save metadata", "error");
     } finally {
       setIsSaving(false);
     }
@@ -509,6 +532,14 @@ export default function App() {
       }
       setTagInputs(prev => ({ ...prev, [category]: '' }));
     }
+  };
+
+  const handleSuggestionClick = (category: TagCategory, tag: string) => {
+    if (!editTags[category].includes(tag)) {
+      setEditTags(prev => ({ ...prev, [category]: [...prev[category], tag] }));
+    }
+    setTagInputs(prev => ({ ...prev, [category]: '' }));
+    setFocusedInput(null);
   };
 
   const handleAddKeyword = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -604,7 +635,7 @@ export default function App() {
               <div className="bg-indigo-600 p-2 rounded-lg hidden sm:block">
                 <ImageIcon className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-neutral-900">Image Manager</h1>
+              <h1 className="text-xl font-bold tracking-tight text-neutral-900">Viglacera Products</h1>
             </div>
           </div>
 
@@ -656,11 +687,11 @@ export default function App() {
 
         {/* Sidebar */}
         <aside className={`
-          absolute md:static inset-y-0 left-0 z-50 w-72 md:w-64 flex-none bg-white border-r border-neutral-200 overflow-y-auto py-6 px-4
+          absolute md:static inset-y-0 left-0 z-50 w-72 md:w-64 flex-none bg-white border-r border-neutral-200 flex flex-col py-6 px-4
           transform transition-transform duration-300 ease-in-out
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}>
-          <div className="flex items-center justify-between mb-6 md:hidden">
+          <div className="flex items-center justify-between mb-6 md:hidden flex-none">
             <h2 className="text-lg font-bold text-neutral-900">Menu</h2>
             <button 
               onClick={() => setIsMobileSidebarOpen(false)}
@@ -669,10 +700,10 @@ export default function App() {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <nav className="space-y-1">
+          <nav className="flex flex-col h-full overflow-hidden space-y-1">
             <button
               onClick={() => { setSelectedDirectory(null); setIsMobileSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`w-full flex-none flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 selectedDirectory === null
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-neutral-700 hover:bg-neutral-100'
@@ -682,20 +713,22 @@ export default function App() {
               Home
             </button>
             
-            <div className="pt-6 pb-2">
+            <div className="pt-4 pb-2 flex-none">
               <p className="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                 Directories
               </p>
             </div>
             
             {/* Directory Tree */}
-            <DirectoryTree 
-              nodes={directoryTree} 
-              selectedDirectory={selectedDirectory} 
-              onSelect={(dir) => { setSelectedDirectory(dir); setIsMobileSidebarOpen(false); }} 
-            />
+            <div className="flex-1 overflow-y-auto min-h-[150px] pr-2 custom-scrollbar">
+              <DirectoryTree 
+                nodes={directoryTree} 
+                selectedDirectory={selectedDirectory} 
+                onSelect={(dir) => { setSelectedDirectory(dir); setIsMobileSidebarOpen(false); }} 
+              />
+            </div>
 
-            <div className="pt-6 pb-2 flex items-center justify-between px-3">
+            <div className="pt-4 pb-2 flex items-center justify-between px-3 flex-none border-t border-neutral-100 mt-2">
               <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                 Tags Filter
               </p>
@@ -709,60 +742,78 @@ export default function App() {
               )}
             </div>
             
-            {tagCategories.map(({ key, label }) => {
-              const categoryTags = allTags[key];
-              if (categoryTags.length === 0) return null;
-              
-              return (
-                <div key={key} className="mb-4">
-                  <p className="px-3 text-xs font-medium text-neutral-400 mb-2">{label}</p>
-                  <div className="px-3 flex flex-wrap gap-2">
-                    {categoryTags.map(tag => (
-                      <button
-                        key={tag}
-                        onClick={() => toggleTagFilter(key, tag)}
-                        className={`px-2 py-1 text-xs font-medium rounded-md border transition-colors ${
-                          selectedTags[key].includes(tag) 
-                            ? 'bg-indigo-100 border-indigo-200 text-indigo-700' 
-                            : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    ))}
+            <div className="flex-1 overflow-y-auto min-h-[150px] pr-2 custom-scrollbar">
+              {tagCategories.map(({ key, label }) => {
+                const categoryTags = allTags[key];
+                if (categoryTags.length === 0) return null;
+                
+                return (
+                  <div key={key} className="mb-4">
+                    <p className="px-3 text-xs font-medium text-neutral-400 mb-2">{label}</p>
+                    <div className="px-3 flex flex-wrap gap-2">
+                      {categoryTags.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTagFilter(key, tag)}
+                          className={`px-2 py-1 text-xs font-medium rounded-md border transition-colors ${
+                            selectedTags[key].includes(tag) 
+                              ? 'bg-indigo-100 border-indigo-200 text-indigo-700' 
+                              : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                );
+              })}
+              
+              {Object.values(allTags).every((tags: any) => tags.length === 0) && (
+                <div className="px-3">
+                  <p className="text-xs text-neutral-400 italic">No tags found</p>
                 </div>
-              );
-            })}
-            
-            {Object.values(allTags).every((tags: any) => tags.length === 0) && (
-              <div className="px-3">
-                <p className="text-xs text-neutral-400 italic">No tags found</p>
-              </div>
-            )}
+              )}
+            </div>
           </nav>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-6xl mx-auto">
-            {!selectedDirectory && !searchQuery && selectedTags.length === 0 && !loading && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-neutral-900">Recent Images</h2>
-                <p className="text-neutral-500 mt-1">Showing 10 basic images from your storage.</p>
-              </div>
-            )}
-            
-            {(selectedDirectory || selectedTags.length > 0) && !loading && (
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-8xl mx-auto">
+            {!loading && (
               <div className="mb-8 flex items-center gap-3">
                 <div className="p-3 bg-indigo-100 rounded-xl">
-                  {selectedDirectory ? <Folder className="w-8 h-8 text-indigo-600" /> : <Tag className="w-8 h-8 text-indigo-600" />}
+                  {searchQuery || searchFeature ? (
+                    <Search className="w-8 h-8 text-indigo-600" />
+                  ) : totalSelectedTagsCount > 0 ? (
+                    <Tag className="w-8 h-8 text-indigo-600" />
+                  ) : selectedDirectory ? (
+                    <Folder className="w-8 h-8 text-indigo-600" />
+                  ) : (
+                    <ImageIcon className="w-8 h-8 text-indigo-600" />
+                  )}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-neutral-900 capitalize">
-                    {selectedDirectory || 'Filtered Results'}
+                    {searchQuery || searchFeature
+                      ? (searchQuery ? `Kết quả tìm kiếm cho: "${searchQuery}"` : 'Kết quả tìm kiếm bằng hình ảnh') + (totalSelectedTagsCount > 0 ? ` (đang lọc theo tags)` : '')
+                      : totalSelectedTagsCount > 0
+                      ? `Đang lọc theo tags: ${[
+                          ...selectedTags.size,
+                          ...selectedTags.surface,
+                          ...selectedTags.material,
+                          ...selectedTags.other
+                        ].join(', ')}`
+                      : selectedDirectory
+                      ? selectedDirectory
+                      : 'Tất cả hình ảnh'}
                   </h2>
-                  <p className="text-neutral-500 mt-1">{filteredImages.length} images</p>
+                  <p className="text-neutral-500 mt-1">
+                    {!selectedDirectory && !searchQuery && !searchFeature && totalSelectedTagsCount === 0
+                      ? 'Hiển thị tất cả ảnh trong các thư mục.'
+                      : `${filteredImages.length} images found`}
+                  </p>
                 </div>
               </div>
             )}
@@ -775,9 +826,9 @@ export default function App() {
               <div className="space-y-12">
                 {visibleGroupedImages.map(({ dir, images: dirImages, total }) => (
                   <section key={dir} className="space-y-4">
-                    {(!selectedDirectory || searchQuery || selectedTags.length > 0) && (
+                    {(!selectedDirectory || searchQuery || totalSelectedTagsCount > 0 || searchFeature) && (
                       <div className="flex items-center gap-2 border-b border-neutral-200 pb-2">
-                        <Folder className="w-5 h-5 text-indigo-500" />
+                        {searchFeature ? <Search className="w-5 h-5 text-indigo-500" /> : <Folder className="w-5 h-5 text-indigo-500" />}
                         <h3 className="text-lg font-semibold text-neutral-800 capitalize">
                           {dir}
                         </h3>
@@ -1001,9 +1052,29 @@ export default function App() {
                           value={tagInputs[key]}
                           onChange={(e) => setTagInputs(prev => ({ ...prev, [key]: e.target.value }))}
                           onKeyDown={(e) => handleAddTag(key, e)}
+                          onFocus={() => setFocusedInput(key)}
+                          onBlur={() => setTimeout(() => setFocusedInput(null), 150)}
                           placeholder={`Add ${label.toLowerCase()} and press Enter`}
                           className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
                         />
+                        {focusedInput === key && allTags[key].filter(t => t.toLowerCase().includes(tagInputs[key].toLowerCase()) && !editTags[key].includes(t)).length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-lg max-h-48 overflow-y-auto custom-scrollbar">
+                            {allTags[key]
+                              .filter(t => t.toLowerCase().includes(tagInputs[key].toLowerCase()) && !editTags[key].includes(t))
+                              .map(tag => (
+                                <button
+                                  key={tag}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault(); // Prevent input blur
+                                    handleSuggestionClick(key, tag);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-700 hover:text-white transition-colors"
+                                >
+                                  {tag}
+                                </button>
+                              ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1071,10 +1142,10 @@ export default function App() {
                                 navigator.clipboard.write([
                                   new ClipboardItem({ 'image/png': blob })
                                 ]).then(() => {
-                                  alert('Image copied to clipboard!');
+                                  showToast('Image copied to clipboard!');
                                 }).catch(err => {
                                   console.error('Failed to copy image: ', err);
-                                  alert('Failed to copy image.');
+                                  showToast('Failed to copy image.', 'error');
                                 });
                               }
                             }, 'image/png');
@@ -1082,7 +1153,7 @@ export default function App() {
                           img.src = getImageUrl(selectedImage.path);
                         } catch (err) {
                           console.error('Copy failed:', err);
-                          alert('Failed to copy image.');
+                          showToast('Failed to copy image.', 'error');
                         }
                       }}
                       className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
@@ -1101,6 +1172,16 @@ export default function App() {
                 </div>
               </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-[100] px-4 py-3 rounded-lg shadow-lg font-medium text-sm flex items-center gap-2 transition-all duration-300 ${
+          toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {toast.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+          {toast.message}
         </div>
       )}
     </div>
