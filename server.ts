@@ -16,7 +16,11 @@ const FEATURE_CACHE_FILE = path.join(__dirname, 'feature-cache.json');
 function readMetadata() {
   if (fs.existsSync(DATA_FILE)) {
     try {
-      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+      let rawData = fs.readFileSync(DATA_FILE, 'utf-8');
+      if (rawData.charCodeAt(0) === 0xFEFF) {
+        rawData = rawData.slice(1);
+      }
+      return JSON.parse(rawData);
     } catch (e) {
       console.error('Error reading metadata:', e);
       return {};
@@ -82,6 +86,17 @@ async function startServer() {
       const featureCache = readFeatureCache();
       let cacheUpdated = false;
 
+      // Pre-compute lowercased maps for O(1) lookup
+      const lowerMetadata: Record<string, any> = {};
+      for (const key in metadata) {
+        lowerMetadata[key.toLowerCase()] = metadata[key];
+      }
+      
+      const lowerFeatureCache: Record<string, string> = {};
+      for (const key in featureCache) {
+        lowerFeatureCache[key.toLowerCase()] = featureCache[key];
+      }
+
       // Find all image files in the storage directory
       const imageFiles = await glob('**/*.{jpg,jpeg,png,gif,webp,svg}', { 
         cwd: STORAGE_DIR,
@@ -101,9 +116,11 @@ async function startServer() {
         const title = `${dirName} | ${filename}`;
         const urlPath = `/storage/${file.replace(/\\/g, '/')}`;
 
-        const fileMeta = metadata[urlPath] || {};
+        const lowerUrlPath = urlPath.toLowerCase();
+        const fileMeta = lowerMetadata[lowerUrlPath] || {};
 
-        let feature = featureCache[urlPath];
+        let feature = lowerFeatureCache[lowerUrlPath];
+        
         if (!feature) {
           try {
             const { data } = await sharp(fullPath)
@@ -113,6 +130,7 @@ async function startServer() {
               .toBuffer({ resolveWithObject: true });
             feature = data.toString('base64');
             featureCache[urlPath] = feature;
+            lowerFeatureCache[lowerUrlPath] = feature;
             cacheUpdated = true;
           } catch (e) {
             console.error(`Error extracting feature for ${file}:`, e);
