@@ -223,7 +223,7 @@ export default function App() {
 
   const fetchImages = async () => {
     try {
-      const url = import.meta.env.DEV ? '/api/images' : `${import.meta.env.BASE_URL}images.json`;
+      const url = import.meta.env.DEV ? '/api/images' : `${import.meta.env.BASE_URL}images.json?t=${Date.now()}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch images');
       const data = await response.json();
@@ -482,7 +482,7 @@ export default function App() {
     if (!selectedImage) return;
     
     if (!import.meta.env.DEV) {
-      showToast("Chức năng chỉ hoạt động ở môi trường Local", "error");
+      showToast("Chức năng lưu chỉ hoạt động ở môi trường Local. Trên GitHub Pages, dữ liệu chỉ có thể xem.", "error");
       return;
     }
 
@@ -635,7 +635,7 @@ export default function App() {
               <div className="bg-indigo-600 p-2 rounded-lg hidden sm:block">
                 <ImageIcon className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-neutral-900">Viglacera Products</h1>
+              <h1 className="text-xl font-bold tracking-tight text-neutral-900">Image Manager</h1>
             </div>
           </div>
 
