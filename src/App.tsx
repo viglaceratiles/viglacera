@@ -582,6 +582,33 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    if (!isImageSearchOpen) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const blob = items[i].getAsFile();
+          if (blob) {
+            setCrop(undefined);
+            const reader = new FileReader();
+            reader.addEventListener('load', () =>
+              setSearchImageSrc(reader.result?.toString() || '')
+            );
+            reader.readAsDataURL(blob);
+          }
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isImageSearchOpen]);
+
   const handleImageSearch = async () => {
     if (!completedCrop || !imgRef.current) return;
     
@@ -941,12 +968,15 @@ export default function App() {
               </button>
             </div>
             <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={onSelectFile} 
-                className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-              />
+              <div className="flex flex-col gap-2">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={onSelectFile} 
+                  className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                />
+                <p className="text-sm text-neutral-500 italic">Or paste an image from your clipboard (Ctrl+V / Cmd+V)</p>
+              </div>
               {searchImageSrc && (
                 <div className="border border-neutral-200 rounded-lg bg-neutral-50 flex items-center justify-center p-4 min-h-[300px] overflow-auto">
                   <ReactCrop
