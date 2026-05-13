@@ -178,8 +178,62 @@ export default function App() {
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const imgRef = useRef<HTMLImageElement>(null);
   const [searchFeature, setSearchFeature] = useState<Uint8Array | null>(null);
+  const [croppedSearchImage, setCroppedSearchImage] = useState<string | null>(null);
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraOpen(true);
+      setSearchImageSrc('');
+      setCrop(undefined);
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      showToast("Không thể truy cập camera", "error");
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraOpen(false);
+  };
+
+  const captureCamera = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        setSearchImageSrc(canvas.toDataURL('image/jpeg'));
+        stopCamera();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!isImageSearchOpen) {
+      stopCamera();
+    }
+  }, [isImageSearchOpen]);
 
   const mainRef = useRef<HTMLElement>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
+    setIsScrolled(e.currentTarget.scrollTop > 100);
+  };
 
   useEffect(() => {
     if (searchQuery || searchFeature) {
@@ -194,7 +248,7 @@ export default function App() {
   }, [selectedDirectory, searchQuery, searchFeature, selectedTags]);
 
   // Pagination / Infinite Scroll state
-  const [visibleCount, setVisibleCount] = useState(50);
+  const [visibleCount, setVisibleCount] = useState(30);
   const observer = useRef<IntersectionObserver | null>(null);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
@@ -202,7 +256,7 @@ export default function App() {
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting) {
-        setVisibleCount(prev => prev + 50);
+        setVisibleCount(prev => prev + 30);
       }
     });
     if (node) observer.current.observe(node);
@@ -210,7 +264,7 @@ export default function App() {
 
   // Reset visible count when filters change
   useEffect(() => {
-    setVisibleCount(50);
+    setVisibleCount(30);
   }, [searchQuery, selectedDirectory, selectedTags, tagFilterMode]);
 
   useEffect(() => {
@@ -221,17 +275,22 @@ export default function App() {
     return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
   };
 
-  const fetchImages = async () => {
+  const fetchImages = async (retries = 3) => {
     try {
       const url = import.meta.env.DEV ? '/api/images' : `${import.meta.env.BASE_URL}images.json?t=${Date.now()}`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch images');
       const data = await response.json();
       setImages(data);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching images:', error);
-    } finally {
-      setLoading(false);
+      if (retries > 0) {
+        setTimeout(() => fetchImages(retries - 1), 1000);
+      } else {
+        setLoading(false);
+        showToast('Không thể tải danh sách ảnh, vui lòng tải lại trang', 'error');
+      }
     }
   };
 
@@ -365,11 +424,6 @@ export default function App() {
     
     const imagesToGroup = filteredImages;
 
-    if (searchFeature) {
-      groups['Kết quả tìm kiếm bằng hình ảnh'] = imagesToGroup;
-      return groups;
-    }
-
     imagesToGroup.forEach((img) => {
       const normalizedDir = img.directory.replace(/\\/g, '/');
       const dir = normalizedDir === '.' ? 'Root' : normalizedDir;
@@ -482,7 +536,7 @@ export default function App() {
     if (!selectedImage) return;
     
     if (!import.meta.env.DEV) {
-      showToast("Chức năng lưu chỉ hoạt động ở môi trường Local. Trên GitHub Pages, dữ liệu chỉ có thể xem.", "error");
+      showToast("Bạn không có quyền thực hiện thao tác này!", "error");
       return;
     }
 
@@ -633,6 +687,25 @@ export default function App() {
       8
     );
 
+    const displayCanvas = document.createElement('canvas');
+    displayCanvas.width = completedCrop.width * scaleX;
+    displayCanvas.height = completedCrop.height * scaleY;
+    const displayCtx = displayCanvas.getContext('2d');
+    if (displayCtx) {
+      displayCtx.drawImage(
+        imgRef.current,
+        completedCrop.x * scaleX,
+        completedCrop.y * scaleY,
+        completedCrop.width * scaleX,
+        completedCrop.height * scaleY,
+        0,
+        0,
+        displayCanvas.width,
+        displayCanvas.height
+      );
+      setCroppedSearchImage(displayCanvas.toDataURL('image/jpeg'));
+    }
+
     const imageData = ctx.getImageData(0, 0, 8, 8).data;
     const feature = new Uint8Array(192);
     let j = 0;
@@ -662,7 +735,7 @@ export default function App() {
               <div className="bg-indigo-600 p-2 rounded-lg hidden sm:block">
                 <ImageIcon className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-neutral-900">Image Manager</h1>
+              <h1 className="text-xl font-bold tracking-tight text-neutral-900">Viglacera Products</h1>
             </div>
           </div>
 
@@ -806,11 +879,12 @@ export default function App() {
         </aside>
 
         {/* Main Content */}
-        <main ref={mainRef} className="flex-1 overflow-y-auto p-6">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-6 relative" onScroll={handleScroll}>
           <div className="max-w-8xl mx-auto">
             {!loading && (
-              <div className="mb-8 flex items-center gap-3">
-                <div className="p-3 bg-indigo-100 rounded-xl">
+              <div className="mb-8 flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-indigo-100 rounded-xl">
                   {searchQuery || searchFeature ? (
                     <Search className="w-8 h-8 text-indigo-600" />
                   ) : totalSelectedTagsCount > 0 ? (
@@ -841,6 +915,33 @@ export default function App() {
                       ? 'Hiển thị tất cả ảnh trong các thư mục.'
                       : `${filteredImages.length} images found`}
                   </p>
+                </div>
+              </div>
+              {searchFeature && croppedSearchImage && (
+                  <div className="mt-4 md:mt-0 lg:ml-auto p-2 bg-white rounded-xl shadow-sm border border-neutral-200 flex items-center gap-3">
+                    <img src={croppedSearchImage} alt="Sample" className="w-16 h-16 object-cover rounded-lg border border-neutral-100" />
+                    <div className="text-sm pr-2">
+                      <p className="font-semibold text-neutral-700">Ảnh mẫu</p>
+                      <button onClick={() => { setSearchFeature(null); setCroppedSearchImage(null); }} className="text-red-500 hover:text-red-600 font-medium text-xs">Hủy bỏ</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {searchFeature && croppedSearchImage && isScrolled && (
+              <div className="fixed bottom-6 right-6 z-40 bg-white p-2 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200 transition-all duration-300 animate-in slide-in-from-bottom-4">
+                <div className="relative group flex items-center gap-3 pr-2">
+                  <img src={croppedSearchImage} alt="Sample" className="w-14 h-14 md:w-20 md:h-20 object-cover rounded-lg border border-neutral-100" />
+                  <div className="text-sm hidden sm:block">
+                    <p className="font-semibold text-neutral-700">Ảnh mẫu</p>
+                  </div>
+                  <button 
+                    onClick={() => { setSearchFeature(null); setCroppedSearchImage(null); }} 
+                    className="absolute -top-3 -right-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-full p-1.5 shadow-sm border border-red-100 transition-colors"
+                  >
+                    <X className="w-4 h-4"/>
+                  </button>
                 </div>
               </div>
             )}
@@ -968,16 +1069,49 @@ export default function App() {
               </button>
             </div>
             <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={onSelectFile} 
-                  className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                />
-                <p className="text-sm text-neutral-500 italic">Or paste an image from your clipboard (Ctrl+V / Cmd+V)</p>
+              <div className="flex flex-col gap-3">
+                {!isCameraOpen && (
+                  <>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={onSelectFile} 
+                      className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    />
+                    <p className="text-sm text-neutral-500 italic">Or paste an image from your clipboard (Ctrl+V / Cmd+V)</p>
+                    <div className="flex items-center gap-4 py-2">
+                      <div className="flex-1 h-px bg-neutral-200"></div>
+                      <span className="text-xs text-neutral-400 font-medium uppercase tracking-wider">Hoặc</span>
+                      <div className="flex-1 h-px bg-neutral-200"></div>
+                    </div>
+                    <button 
+                      onClick={startCamera} 
+                      className="py-3 px-4 rounded-xl bg-indigo-50 text-indigo-700 font-semibold flex items-center justify-center gap-2 hover:bg-indigo-100 transition-colors"
+                    >
+                      <Camera className="w-5 h-5" />
+                      Chụp ảnh trực tiếp
+                    </button>
+                  </>
+                )}
+                {isCameraOpen && (
+                  <div className="flex flex-col gap-3">
+                    <div className="relative aspect-video w-full bg-black rounded-xl overflow-hidden shadow-inner flex items-center justify-center text-white/50 text-sm">
+                      {!streamRef.current && <span>Đang mở camera...</span>}
+                      <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
+                    </div>
+                    <div className="flex gap-2 justify-end mt-2">
+                      <button onClick={stopCamera} className="py-2.5 px-5 rounded-lg bg-neutral-100 text-neutral-700 font-medium hover:bg-neutral-200 transition-colors">
+                        Hủy
+                      </button>
+                      <button onClick={captureCamera} className="py-2.5 px-5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                        <Camera className="w-4 h-4" />
+                        Chụp ảnh mẫu
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              {searchImageSrc && (
+              {searchImageSrc && !isCameraOpen && (
                 <div className="border border-neutral-200 rounded-lg bg-neutral-50 flex items-center justify-center p-4 min-h-[300px] overflow-auto">
                   <ReactCrop
                     crop={crop}
